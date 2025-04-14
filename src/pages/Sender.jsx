@@ -3,10 +3,17 @@ import Peer from "peerjs";
 
 const Sender = () => {
   const [viewerId, setViewerId] = useState("");
+  const [isSupported, setIsSupported] = useState(true);
   const videoRef = useRef();
   const peerRef = useRef(null);
 
   useEffect(() => {
+    // Check for screen sharing support
+    if (!navigator.mediaDevices.getDisplayMedia) {
+      setIsSupported(false);
+      return;
+    }
+
     const peer = new Peer();
     peer.on("open", (id) => {
       console.log("Sender ID:", id);
@@ -15,10 +22,23 @@ const Sender = () => {
   }, []);
 
   const startShare = async () => {
-    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-    videoRef.current.srcObject = stream;
-    peerRef.current.call(viewerId, stream);
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      videoRef.current.srcObject = stream;
+      peerRef.current.call(viewerId, stream);
+    } catch (err) {
+      console.error("Error starting screen share:", err);
+      alert("Could not start screen sharing. Please check browser support and permissions.");
+    }
   };
+
+  if (!isSupported) {
+    return (
+      <div className="p-4">
+        <h2 className="text-xl font-bold text-red-600">Screen sharing is not supported on this device or browser.</h2>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 space-y-4">
